@@ -1,0 +1,85 @@
+"""
+TensorFlow Python 库有一个默认图 (default graph), op 构造器可以为其增加节点.
+这个默认图对许多程序来说已经足够用了.
+通过 tf.Session() 获取到默认图
+"""
+
+import tensorflow as tf
+
+
+def variable_test():
+    """变量Variables维护图执行过程中的状态信息."""
+    x_v = tf.Variable(0, name="x_v")
+    one = tf.constant(1)
+    add_op = tf.add(x_v, one)
+    assign_op = tf.assign(x_v, add_op)
+    # 初始化变量操作
+    init_op = tf.global_variables_initializer()
+
+    with tf.Session() as sess:
+        # tensorflow.python.framework.errors_impl.FailedPreconditionError: Attempting to use uninitialized value x_v
+        # [[{{node _retval_x_v_0_0}}]]
+        sess.run(init_op)
+        print("x_v: ", sess.run(x_v))
+        for i in range(5):
+            sess.run(assign_op)
+            print("x_v: ", sess.run(x_v))
+
+
+def feed_test():
+    """
+    Feed：使用一个tensor值临时替换一个操作的输出结果。可以提供feed数据作为run()调用的参数.
+    feed 只在调用它的方法内有效, 方法结束, feed 就会消失.
+    最常见的用例是将某些特殊的操作指定为 “feed” 操作, 标记的方法是使用tf.placeholder() 为这些操作创建占位符。
+    :return:
+    """
+    x = tf.placeholder(tf.int8, name="x1")
+    y = tf.placeholder(tf.int8, name='y1')
+    res = tf.multiply(x, y)
+
+    with tf.Session() as session:
+        r = session.run(res, feed_dict={x: 3, y: 5})
+        print("res: ", r)
+
+        r1 = session.run(res, feed_dict={x: [2, 3], y: [4, 5]})
+        print("res: ", r1)
+
+
+def fetch_test():
+    """
+    Fetch：为了取回操作的输出内容，可以使用session对象的run()调用执行图时，传入一些tensor，这些 tensor会帮助你取回结果。
+    :return:
+    """
+    x1 = tf.constant(3)
+    x2 = tf.constant(4)
+    x3 = tf.constant(5)
+    ao = tf.add(x1, x2)
+    mo = tf.multiply(x1, x3)
+
+    with tf.Session() as session:
+        # 需要获取的多个 tensor 值，在 op 的一次运行中一起获得（而不是逐个去获取 tensor）。
+        res = session.run([ao, mo])
+        print("res: ", res)
+
+
+def tensorboard_test():
+    """
+    通过tensorboard可视化工具观察图
+    1. writer = tf.summary.FileWriter("logs", tf.get_default_graph())
+       writer.close()
+    2. tensorboard --logdir logs
+    3. TensorBoard 1.14.0 at http://DESKTOP-5D3CMLH:6006/ (Press CTRL+C to quit)
+        ps: 需要使用localhost:6006打开
+    :return:
+    """
+    variable_test()
+    writer = tf.summary.FileWriter("logs", tf.get_default_graph())
+    writer.close()
+
+
+if __name__ == '__main__':
+    # variable_test()
+    # feed_test()
+    # fetch_test()
+    tensorboard_test()
+    pass
